@@ -73,8 +73,14 @@ if(KernelPlatImx6)
         set(timer_file drivers/timer/arm_priv.h)
     endif()
 
+    if(KernelARMPlatform STREQUAL "imx6ul")
+        set(timer_frequency 62500000)
+    else()
+        set(timer_frequency 498000000)
+    endif()
+
     declare_default_headers(
-        TIMER_FREQUENCY 498000000
+        TIMER_FREQUENCY ${timer_frequency}
         MAX_IRQ 159
         INTERRUPT_CONTROLLER arch/machine/gic_v2.h
         NUM_PPI 32
