@@ -1,0 +1,11 @@
+/ {
+	chosen {
+               seL4,elfloader-devices =
+                   &{/soc/serial@21e8000};
+
+		seL4,kernel-devices =
+		    &{/soc/serial@21e8000},
+		    &{/soc/interrupt-controller@a01000},
+		    &{/soc/timer};
+	};
+};

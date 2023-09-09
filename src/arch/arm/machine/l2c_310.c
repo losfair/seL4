@@ -13,7 +13,9 @@
 
 #define L2_LINE_START(a) ROUND_DOWN(a, L2_LINE_SIZE_BITS)
 
+#ifndef CONFIG_DEBUG_DISABLE_L2_CACHE
 compile_assert(l2_l1_same_line_size, L2_LINE_SIZE_BITS == L1_CACHE_LINE_SIZE_BITS)
+#endif
 
 /* MSHIELD Control */
 #define MSHIELD_SMC_ROM_CTRL_CTRL         0x102
@@ -219,12 +221,14 @@ struct l2cc_map {
 };
 
 
+#ifndef CONFIG_DEBUG_DISABLE_L2_CACHE
 #ifndef L2CC_L2C310_PPTR
 #error L2CC_L2C310_PPTR must be defined for virtual memory access to the L2 cache controller
 #else  /* L2CC_PPTR */
 volatile struct l2cc_map *const l2cc
     = (volatile struct l2cc_map *)L2CC_L2C310_PPTR;
 #endif /* !L2CC_PPTR */
+#endif /* !CONFIG_DEBUG_DISABLE_L2_CACHE */
 
 
 #ifdef TI_MSHIELD
@@ -350,23 +354,25 @@ BOOT_CODE void initL2Cache(void)
 #endif /* !CONFIG_DEBUG_DISABLE_L2_CACHE */
 }
 
+#ifndef CONFIG_DEBUG_DISABLE_L2_CACHE
 static inline void L2_cacheSync(void)
 {
     dmb();
     l2cc->maintenance.cache_sync = 0;
     while (l2cc->maintenance.cache_sync & MAINTENANCE_PENDING);
 }
+#endif /* !CONFIG_DEBUG_DISABLE_L2_CACHE */
 
 void plat_cleanInvalidateL2Cache(void)
 {
-    if (!config_set(CONFIG_DEBUG_DISABLE_L2_CACHE)) {
+#ifndef CONFIG_DEBUG_DISABLE_L2_CACHE
         l2cc->maintenance.clean_way = 0xffff;
         while (l2cc->maintenance.clean_way);
         L2_cacheSync();
         l2cc->maintenance.inv_way = 0xffff;
         while (l2cc->maintenance.inv_way);
         L2_cacheSync();
-    }
+#endif /* !CONFIG_DEBUG_DISABLE_L2_CACHE */
 }
 
 void plat_cleanCache(void)

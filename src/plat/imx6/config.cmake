@@ -18,6 +18,7 @@ foreach(
     KernelPlatformSabre
     KernelPlatformWandQ
     KernelPlatformNitrogen6SX
+    KernelPlatformImx6ul
     KernelPlatImx6dq
     KernelPlatImx6sx
 )
@@ -32,14 +33,21 @@ if(KernelPlatImx6)
     if(KernelARMPlatform STREQUAL "sabre")
         config_set(KernelPlatformSabre PLAT_SABRE ON)
         config_set(KernelPlatImx6dq PLAT_IMX6DQ ON)
+        set(KernelArmCortexA9 ON)
 
     elseif(KernelARMPlatform STREQUAL "wandq")
         config_set(KernelPlatformWandQ PLAT_WANDQ ON)
         config_set(KernelPlatImx6dq PLAT_IMX6DQ ON)
+        set(KernelArmCortexA9 ON)
 
     elseif(KernelARMPlatform STREQUAL "nitrogen6sx")
         config_set(KernelPlatformNitrogen6SX PLAT_NITROGEN6SX ON)
         config_set(KernelPlatImx6sx PLAT_IMX6SX ON)
+        set(KernelArmCortexA9 ON)
+
+    elseif(KernelARMPlatform STREQUAL "imx6ul")
+        config_set(KernelPlatformImx6ul PLAT_IMX6UL ON)
+        set(KernelArmCortexA7 ON)
 
     else()
         message(FATAL_ERROR "Which imx6 platform not specified")
@@ -47,7 +55,6 @@ if(KernelPlatImx6)
 
     config_set(KernelARMPlatform ARM_PLAT ${KernelARMPlatform})
     declare_seL4_arch(aarch32)
-    set(KernelArmCortexA9 ON)
     set(KernelArchArmV7a ON)
     set(KernelArmMach "imx" CACHE INTERNAL "")
     list(APPEND KernelDTSList "tools/dts/${KernelARMPlatform}.dts")
@@ -60,6 +67,8 @@ if(KernelPlatImx6)
             list(APPEND KernelDTSList "src/plat/imx6/mcs-overlay-imx6.dts")
         endif()
         set(timer_file drivers/timer/arm_global.h)
+    elseif(KernelARMPlatform STREQUAL "imx6ul")
+        set(timer_file drivers/timer/arm_generic.h)
     else()
         set(timer_file drivers/timer/arm_priv.h)
     endif()
