@@ -259,7 +259,7 @@ static bool_t BOOT_CODE init_vtx_fixed_values(bool_t useTrueMsrs)
 #ifdef CONFIG_ARCH_X86_64
 #ifdef CONFIG_X86_64_VTX_64BIT_GUESTS
     uint32_t entry_control_mask = 0;
-    entry_control_mask |= BIT(9); //Guest address-space size
+    // entry_control_mask |= BIT(9); //Guest address-space size
 #endif
     exit_control_mask |= BIT(9); //Host address-space size
 #endif /* CONFIG_ARCH_X86_64 */
