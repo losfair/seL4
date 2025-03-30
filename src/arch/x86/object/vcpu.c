@@ -259,6 +259,7 @@ static bool_t BOOT_CODE init_vtx_fixed_values(bool_t useTrueMsrs)
 #ifdef CONFIG_ARCH_X86_64
 #ifdef CONFIG_X86_64_VTX_64BIT_GUESTS
     uint32_t entry_control_mask = 0;
+    entry_control_mask |= BIT(15); //Load guest IA32_EFER on entry
     // entry_control_mask |= BIT(9); //Guest address-space size
 #endif
     exit_control_mask |= BIT(9); //Host address-space size
@@ -779,6 +780,14 @@ static exception_t invokeWriteVMCS(vcpu_t *vcpu, bool_t call, word_t *buffer, wo
         break;
     case VMX_CONTROL_CR0_READ_SHADOW:
         vcpu->cr0_shadow = vcpu->cached_cr0_shadow = value;
+        break;
+    case VMX_GUEST_EFER:
+        // Sync EFER.LMA with entry control
+        if (value & BIT(10)) {
+            vmwrite(VMX_CONTROL_ENTRY_CONTROLS, vmread(VMX_CONTROL_ENTRY_CONTROLS) | BIT(9));
+        } else {
+            vmwrite(VMX_CONTROL_ENTRY_CONTROLS, vmread(VMX_CONTROL_ENTRY_CONTROLS) & ~BIT(9));
+        }
         break;
     }
     vmwrite(field, value);
