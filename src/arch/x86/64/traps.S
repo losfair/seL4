@@ -591,7 +591,14 @@ END_FUNC(kernel_exception)
 BEGIN_FUNC(handle_fastsyscall)
     LOAD_KERNEL_AS(rsp)
     MAYBE_SWAPGS
+#if defined(ENABLE_SMP_SUPPORT) && !defined(CONFIG_KERNEL_SKIM_WINDOW)
+    mov     %rsp, %gs:32    # only works when skim window is disabled
+#endif
     LOAD_USER_CONTEXT
+#if defined(ENABLE_SMP_SUPPORT) && !defined(CONFIG_KERNEL_SKIM_WINDOW)
+    addq    $8, %rsp
+    pushq   %gs:32          # save RSP
+#endif
     pushq   $-1             # set Error -1 to mean entry via syscall
     push    %rcx            # save NextIP
     push    %r11            # save RFLAGS

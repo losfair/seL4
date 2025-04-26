@@ -170,6 +170,11 @@ void VISIBLE NORETURN c_handle_syscall(word_t cptr, word_t msgInfo, syscall_t sy
         setRegister(NODE_STATE(ksCurThread), FaultIP, getRegister(NODE_STATE(ksCurThread), NextIP) - 2);
     }
 
+    if (unlikely(cap_get_capType(TCB_PTR_CTE_PTR(NODE_STATE(ksCurThread), tcbBuffer)->cap) == cap_null_cap)) {
+        slowpath(0);
+        UNREACHABLE();
+    }
+
 #ifdef CONFIG_FASTPATH
     if (syscall == (syscall_t)SysCall) {
         fastpath_call(cptr, msgInfo);

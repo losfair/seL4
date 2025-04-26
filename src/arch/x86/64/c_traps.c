@@ -365,8 +365,13 @@ void VISIBLE NORETURN restore_user_context(void)
                 "movq %%rsp, %%cr3\n"
 #endif /* CONFIG_KERNEL_SKIM_WINDOW */
 #endif /* defined(ENABLE_SMP_SUPPORT) && defined(CONFIG_KERNEL_SKIM_WINDOW) */
+#if defined(ENABLE_SMP_SUPPORT) && !defined(CONFIG_KERNEL_SKIM_WINDOW)
+                // restore RSP
+                "movq 8(%%rsp), %%rsp\n"
+#else
                 // clear RSP to not leak information to the user
                 "xor %%rsp, %%rsp\n"
+#endif
                 // More register but we can ignore and are done restoring
                 // enable interrupt disabled by sysenter
                 "sysretq\n"
