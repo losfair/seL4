@@ -394,6 +394,8 @@ void vcpu_restore_guest_msrs(vcpu_t *vcpu);
 void vcpu_restore_host_msrs(void);
 #endif
 
+bool_t is_vtx_enabled(void);
+
 static inline word_t vmread(word_t field)
 {
     word_t value;

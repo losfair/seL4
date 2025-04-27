@@ -72,6 +72,17 @@ exception_t decodeUntypedInvocation(word_t invLabel, word_t length, cte_t *slot,
         return EXCEPTION_SYSCALL_ERROR;
     }
 
+#ifdef CONFIG_VTX
+    if (newType == seL4_X86_VCPUObject) {
+        if (!is_vtx_enabled()) {
+            userError("Untyped Retype: VCPU: VT-x not supported.");
+            current_syscall_error.type = seL4_InvalidArgument;
+            current_syscall_error.invalidArgumentNumber = 0;
+            return EXCEPTION_SYSCALL_ERROR;
+        }
+    }
+#endif
+
     objectSize = getObjectSize(newType, userObjSize);
 
     /* Exclude impossibly large object sizes. getObjectSize can overflow if userObjSize

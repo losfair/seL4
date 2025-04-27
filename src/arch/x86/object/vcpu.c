@@ -62,6 +62,8 @@ static uint32_t vmcs_revision;
 /* Cached value of the VPID capability MSR */
 static vmx_ept_vpid_cap_msr_t vpid_capability;
 
+static bool_t vtx_enabled;
+
 /* Cache the values that we calculated for bits that need to be set high
  * and low in various vmcs fields */
 static uint32_t pin_control_high;
@@ -1147,6 +1149,11 @@ static bool_t is_vtx_supported(void)
     return !!(x86_cpuid_ecx(0x1, 0) & BIT(5));
 }
 
+bool_t is_vtx_enabled(void)
+{
+    return vtx_enabled;
+}
+
 static inline void clear_bit(word_t *bitmap, word_t bit)
 {
     int index = bit / (sizeof(word_t) * 8);
@@ -1156,9 +1163,11 @@ static inline void clear_bit(word_t *bitmap, word_t bit)
 
 BOOT_CODE bool_t vtx_init(void)
 {
+    vtx_enabled = false;
+
     if (!is_vtx_supported()) {
         printf("vt-x: not supported\n");
-        return false;
+        return true;
     }
     vmx_basic_msr_t vmx_basic;
     feature_control_msr_t feature_control;
@@ -1170,7 +1179,7 @@ BOOT_CODE bool_t vtx_init(void)
         /* enable if the MSR is not locked */
         if (feature_control_msr_get_lock(feature_control)) {
             printf("vt-x: feature locked\n");
-            return false;
+            return true;
         }
         feature_control = feature_control_msr_set_vmx_outside_smx(feature_control, 1);
         x86_wrmsr_parts(IA32_FEATURE_CONTROL_MSR, x86_rdmsr_high(IA32_FEATURE_CONTROL_MSR), feature_control.words[0]);
@@ -1185,12 +1194,12 @@ BOOT_CODE bool_t vtx_init(void)
     if (CURRENT_CPU_INDEX() == 0) {
         if (!init_vtx_fixed_values(vmx_basic_msr_get_true_msrs(vmx_basic))) {
             printf("vt-x: lack of required features\n");
-            return false;
+            return true;
         }
     }
     if (!check_vtx_fixed_values(vmx_basic_msr_get_true_msrs(vmx_basic))) {
         printf("vt-x: cores have inconsistent features\n");
-        return false;
+        return true;
     }
     write_cr4(read_cr4() | CR4_VMXE);
     /* we are required to set the VMCS region in the VMXON region */
@@ -1198,11 +1207,11 @@ BOOT_CODE bool_t vtx_init(void)
     /* Before calling vmxon, we must check that CR0 and CR4 are not set to values
      * that are unsupported by vt-x */
     if (!vtx_check_fixed_values(read_cr0(), read_cr4())) {
-        return false;
+        return true;
     }
     if (vmxon(kpptr_to_paddr(&vmxon_region))) {
         printf("vt-x: vmxon failure\n");
-        return false;
+        return true;
     }
     memset(&msr_bitmap_region, ~0, sizeof(msr_bitmap_region));
     /* Set sysenter MSRs to writeable and readable. These are all low msrs */
@@ -1230,13 +1239,14 @@ BOOT_CODE bool_t vtx_init(void)
     /* check for supported EPT features */
     if (!vmx_ept_vpid_cap_msr_get_ept_wb(vpid_capability)) {
         printf("vt-x: Expected wb attribute for EPT paging structure\n");
-        return false;
+        return true;
     }
     if (!vmx_ept_vpid_cap_msr_get_ept_2m(vpid_capability)) {
         printf("vt-x: Expected supported for 2m pages\n");
-        return false;
+        return true;
     }
 
+    vtx_enabled = true;
     return true;
 }
 
